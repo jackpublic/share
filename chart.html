@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Line Chart with Chart.js</title>
+    <!-- Include Chart.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+</head>
+<body>
+    <h1>Line Chart</h1>
+    <div style="width: 80%; margin: auto;">
+        <!-- Input for adding data points -->
+        <input type="text" id="dataPoint" placeholder="Enter a data point">
+        <button onclick="addDataPoint()">Add A Point</button>
+		<div id="warningMessage" style="color: red;"></div>
+	</div>
+	<div style="width: 80%; margin: auto;">
+		<!-- Input for adding line points -->
+		<textarea id="linePoints" rows="5" placeholder="Enter multiple points (x,y) pairs" style="min-width: 400px;"></textarea>
+
+	</div>
+	<div style="width: 80%; margin: auto;">
+		<button onclick="addLinePoint()">Draw a line using the Points</button>
+	</div>
+		
+		<!-- Add a button to reflect datasets over the y-axis -->
+	<div style="width: 80%; margin: auto;">
+		<button onclick="reflectOverYAxis()">Reflect Over Y-Axis</button>
+	</div>
+
+	<div style="width: 80%; margin: auto;">
+        <button onclick="clearChart()">Clear Chart</button>
+    </div>
+    <div style="width: 80%; margin: auto;">
+        <!-- Chart.js canvas -->
+        <canvas id="myChart" width="400" height="200"></canvas>
+    </div>
+
+	<div style="width: 80%; margin: auto;">
+        <!-- Display input history -->
+        <ul id="inputHistory"></ul>
+    </div>
+	
+    <script>
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var data = {
+            labels: [],
+            datasets: [{
+                label: 'Data Points',
+                data: [],
+                fill: false,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.0
+            }]
+        };
+        var config = {
+            type: 'line',
+            data: data,
+            options: {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom'
+                    },
+                    y: {
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            stepSize: 10
+                        }
+                    }
+                }
+            }
+        };
+
+        var myChart = new Chart(ctx, config);
+
+        function addDataPoint() {
+        var dataPointInput = document.getElementById('dataPoint');
+        var dataPointValue = dataPointInput.value.trim(); // Get the input value and remove leading/trailing spaces
+
+        if (dataPointValue.length === 0) {
+            return; // Do nothing if the input is empty
+        }
+
+        // Use regex to match "x, y" pairs in the input with negative and decimal numbers
+        //var regex = /([-+]?\d*\.?\d+),\s*([-+]?\d*\.?\d+)/;
+		var regex = /\((-?\d*\.?\d+\s*,\s*-?\d*\.?\d+|-?\d+\s*-?\d*\/\d+\s*,\s*-?\d+\s*-?\d*\/\d+)\)/;
+        var match = dataPointValue.match(regex);
+
+        if (match) {
+            //var x = parseFloat(match[1]);
+            //var y = parseFloat(match[2]);
+
+            //if (!isNaN(x) && !isNaN(y)) {
+            //    data.labels.push('');
+            //    data.datasets[0].data.push({ x: x, y: y });
+			// Extract and parse number1 and number2 from the matched string
+            var numbers = match[1].split(',');
+            var number1 = numbers[0].trim();
+            var number2 = numbers[1].trim();
+
+            // Parse number1 and number2 as floats
+            var parsedNumber1 = parseFloat(number1);
+            var parsedNumber2 = parseFloat(number2);
+
+            if (!isNaN(parsedNumber1) && !isNaN(parsedNumber2)) {
+                data.labels.push('');
+                data.datasets[0].data.push({ x: parsedNumber1, y: parsedNumber2 });
+				
+				updateAxisScales();
+				
+                myChart.update();
+				document.getElementById('warningMessage').textContent = '';
+            }
+        }
+		else {
+		document.getElementById('warningMessage').textContent = 'Invalid input. Please enter "x, y".';
+		}
+        dataPointInput.value = '';
+    }
+		
+		function addLinePoint() {
+		var linePointsInput = document.getElementById('linePoints');
+		var linePointsValue = linePointsInput.value.trim();
+
+		if (linePointsValue.length === 0) {
+			return;
+		}
+
+		// Use regex to match (x, y) pairs in the input with negative numbers, decimals, and fractions
+		// Use regex to match (x, y) pairs in the input with negative numbers, decimals, and fractions
+		//var regex = /\(\s*(-?\d+\s*\d*\/\d+|-?\d*\.?\d+\s*\d*\/\d+|-?\d*\.?\d+|-?\d+\s*\d*)\s*,\s*(-?\d+\s*\d*\/\d+|-?\d*\.?\d+\s*\d*\/\d+|-?\d*\.?\d+|-?\d+\s*\d*)\s*\)/g;
+		// Use regex to match (x, y) pairs in the input with mixed numbers, decimals, and fractions
+		//var regex = /\(\s*(-?\d+\s+\d*\/\d+|-?\d*\.?\d+\s+\d*\/\d+|-?\d*\.?\d+|-?\d+\s+\d*)\s*,\s*(-?\d+\s+\d*\/\d+|-?\d*\.?\d+\s+\d*\/\d+|-?\d*\.?\d+|-?\d+\s+\d*)\s*\)/g;
+
+
+		var regex = /\(\s*(-?\d+\s+\d*\/\d+|-?\d+\s+\d*\/\d+|-?\d+\s*\.?\d+\s+\d*\/\d+|-?\d*\.?\d+\s+\d*\/\d+|-?\d+|-?\d*\.?\d+)\s*,\s*(-?\d+\s+\d*\/\d+|-?\d+\s+\d*\/\d+|-?\d+\s*\.?\d+\s+\d*\/\d+|-?-?\d*\.?\d+\s+\d*\/\d+|-?\d+|-?\d*\.?\d+)\s*\)/g;
+
+
+			var dataset = {
+				label: 'Line ' + (data.datasets.length + 1),
+				data: [],
+				fill: false,
+				borderColor: 'rgb(75, 192, 192)',
+				tension: 0.0
+			};
+
+			var match;
+			while ((match = regex.exec(linePointsValue)) !== null) {
+				var xValue = parseMixedNumber(match[1]);
+				var yValue = parseMixedNumber(match[2]);
+
+				if (!isNaN(xValue) && !isNaN(yValue)) {
+					dataset.data.push({ x: xValue, y: yValue });
+					
+					// Debug: Print parsed numbers in decimal format
+					console.log('Parsed X:', xValue.toFixed(2), 'Parsed Y:', yValue.toFixed(2));
+				
+				}
+			}
+
+			data.labels.push('');
+			data.datasets.push(dataset);
+			myChart.update();
+			linePointsInput.value = '';
+
+			// Update axis scales based on data
+			updateAxisScales();
+			
+			addToInputHistory(linePointsValue);
+		}
+		
+		function parseMixedNumber(mixedNumberString) {
+		// Parse mixed numbers in the format "x y/z"
+		var parts = mixedNumberString.split(' ');
+
+		if (parts.length === 1) {
+			return parseFloat(parts[0]);
+		} else if (parts.length === 2) {
+			var sign = 1; // Default positive sign
+			var wholeNumber = parseFloat(parts[0]);
+
+			if (parts[0].startsWith('-')) {
+				sign = -1; // Negative sign detected
+				wholeNumber = parseFloat(parts[0].substring(1)); // Remove negative sign for parsing
+			}
+
+			var fractionParts = parts[1].split('/');
+			if (fractionParts.length === 2) {
+				var numerator = parseFloat(fractionParts[0]);
+				var denominator = parseFloat(fractionParts[1]);
+
+				if (!isNaN(wholeNumber) && !isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+					return sign * (wholeNumber + (numerator / denominator));
+				}
+			}
+		}
+		return NaN;
+	}
+
+		function reflectOverYAxis() {
+    // Get the number of existing datasets
+    var datasetCount = data.datasets.length;
+
+    // Iterate through each dataset
+    for (var i = 0; i < datasetCount; i++) {
+        var originalDataset = data.datasets[i];
+
+        // Create a new array for the reflected data points
+        var reflectedDataPoints = [];
+
+        // Reflect the data points over the y-axis
+        for (var j = 0; j < originalDataset.data.length; j++) {
+            var originalDataPoint = originalDataset.data[j];
+            var reflectedDataPoint = { x: -originalDataPoint.x, y: originalDataPoint.y };
+            reflectedDataPoints.push(reflectedDataPoint);
+        }
+
+        // Create a new dataset for the reflected data
+        var reflectedDataset = {
+            label: 'Reflected Data ' + (i + 1),
+            data: reflectedDataPoints,
+            fill: false,
+            borderColor: 'rgb(192, 75, 75)', // Choose a different color for the reflected data
+            tension: 0.1
+        };
+
+        // Add the reflected dataset to the chart data
+        data.datasets.push(reflectedDataset);
+    }
+
+    // Update the chart with the new reflected datasets
+    myChart.update();
+}
+
+
+
+		function addToInputHistory(input) {
+            var inputHistory = document.getElementById('inputHistory');
+            var li = document.createElement('li');
+            li.textContent = input;
+            inputHistory.appendChild(li);
+        }
+
+		function updateAxisScales() {
+            if (data.datasets.length > 0) {
+                var allDataPoints = [].concat.apply([], data.datasets.map(dataset => dataset.data));
+                var xValues = allDataPoints.map(point => Math.abs(point.x));
+                var yValues = allDataPoints.map(point => Math.abs(point.y));
+
+                var maxX = Math.max(...xValues);
+                var maxY = Math.max(...yValues);
+                var minX = -maxX;
+                var minY = -maxY;
+
+                myChart.options.scales.x.min = minX;
+                myChart.options.scales.x.max = maxX;
+                myChart.options.scales.y.min = minY;
+                myChart.options.scales.y.max = maxY;
+            }
+        }
+
+        function clearChart() {
+            data.labels = [];
+            data.datasets = [];
+            myChart.update();
+			
+			// Clear input history
+            var inputHistory = document.getElementById('inputHistory');
+            inputHistory.innerHTML = '';
+        }
+    </script>
+</body>
+</html>
